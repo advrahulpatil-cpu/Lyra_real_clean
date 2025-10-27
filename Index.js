@@ -1,22 +1,29 @@
-const express = require("express");
-const axios = require("axios");
+const express = require('express');
+const axios = require('axios');
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
 
-app.post("/", async (req, res) => {
+app.post('/relay', async (req, res) => {
   try {
-    const response = await axios.post("https://api.delta.exchange/v2/orders/webhook", req.body, {
-      headers: {
-        "api-key": "d7c6e4b1-9e4d-4b3d-8f2f-1a2c3e4f5b6a",
-        "api-secret": "a9f8e7d6-c5b4-3a2f-1e0d-9c8b7a6f5e4d"
-      }
-    });
-    res.status(200).send("Forwarded to Delta Exchange");
+    const { targetUrl, payload } = req.body;
+
+    if (!targetUrl || !payload) {
+      return res.status(400).json({ error: 'Missing targetUrl or payload' });
+    }
+
+    const response = await axios.post(targetUrl, payload);
+    res.status(200).json({ status: 'success', data: response.data });
   } catch (error) {
-    res.status(500).send("Error forwarding to Delta Exchange");
+    res.status(500).json({ status: 'error', message: error.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log("🚀 Relay server running on port 3000");
+app.get('/', (req, res) => {
+  res.send('Lyra Relay is live');
+});
+
+app.listen(PORT, () => {
+  console.log(`Relay server running on port ${PORT}`);
 });
